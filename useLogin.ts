@@ -8,6 +8,8 @@ import { useAccount, useSignMessage, useDisconnect } from "wagmi";
 import { useWeb3Modal } from "@web3modal/wagmi/react";
 import { api } from "utils/api";
 import { createCookie, getCookie, deleteCookie } from "helpers/cookie";
+import { InjectedConnector } from 'wagmi/connectors/injected';
+import { WalletConnectConnector } from 'wagmi/connectors/walletConnect';
 
 function parseToken(token: string): JwtProps {
     return jwt.decode(token) as JwtProps;
@@ -32,7 +34,30 @@ let signMessageTimeout: any = null;
 
 export const useLogin = function () {
     const router = useRouter();
-    const { open } = useWeb3Modal();
+    const { open } = useWeb3Modal({
+        connectors: () => {
+            return [
+                new InjectedConnector({
+                    chains: [],
+                }),
+                new WalletConnectConnector({
+                    options: {
+                        qrcode: true,
+                        rpc: {
+                            1: 'https://mainnet.infura.io/v3/YOUR_INFURA_PROJECT_ID', // Ethereum Mainnet
+                            3: 'https://ropsten.infura.io/v3/YOUR_INFURA_PROJECT_ID', // Ropsten Testnet
+                            4: 'https://rinkeby.infura.io/v3/YOUR_INFURA_PROJECT_ID', // Rinkeby Testnet
+                            5: 'https://goerli.infura.io/v3/YOUR_INFURA_PROJECT_ID', // Goerli Testnet
+                            42: 'https://kovan.infura.io/v3/YOUR_INFURA_PROJECT_ID', // Kovan Testnet
+                            137: 'https://rpc-mainnet.maticvigil.com', // Polygon Mainnet
+                            80001: 'https://rpc-mumbai.maticvigil.com', // Polygon Testnet (Mumbai)
+                        },
+                    },
+                }),
+            ];
+        },
+    });
+
     const { address } = useAccount();
     const { disconnect } = useDisconnect();
     const { profile } = useSnapshot(state);
@@ -112,31 +137,3 @@ export const useLogin = function () {
         logout
     };
 };
-
-// Добавьте эту часть для конфигурации WalletConnect
-import { InjectedConnector } from 'wagmi/connectors/injected';
-import { WalletConnectConnector } from 'wagmi/connectors/walletConnect';
-
-const connectors = () => {
-    return [
-        new InjectedConnector({
-            chains: [],
-        }),
-        new WalletConnectConnector({
-            options: {
-                qrcode: true,
-                rpc: {
-                    // Замените YOUR_RPC_URL на свой RPC URL, если требуется
-                    1: 'https://rpc.mainnet.eth.arbitrum.network',
-                    137: 'https://rpc-mainnet.maticvigil.com',
-                },
-            },
-        }),
-    ];
-};
-
-// В useWeb3Modal добавьте коннекторы
-const { connector } = useWeb3Modal({
-    connectors,
-});
-
